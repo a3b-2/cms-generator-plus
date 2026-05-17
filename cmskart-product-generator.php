@@ -471,10 +471,17 @@ add_action( 'wp_ajax_ckg_seo_analyze', function () {
     ckg_check_ajax();
 
     $data_raw = $_POST['form_data'] ?? '{}';
-    $data     = @json_decode( stripslashes( $data_raw ), true );
-
-    if ( ! is_array( $data ) ) {
-        wp_send_json_error( [ 'message' => 'Datos del formulario no válidos.' ] );
+    $raw = stripslashes( $data_raw );
+    $data = json_decode( $raw, true );
+    if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $data ) ) {
+        if ( preg_match( '/(\{.*\}|\[.*\])/s', $raw, $m ) ) {
+            $data = json_decode( $m[0], true );
+            if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $data ) ) {
+                wp_send_json_error( [ 'message' => 'Datos del formulario no válidos.' ] );
+            }
+        } else {
+            wp_send_json_error( [ 'message' => 'Datos del formulario no válidos.' ] );
+        }
     }
 
     // Sanitizar campos básicos para el análisis
@@ -582,8 +589,18 @@ add_action( 'wp_ajax_ckg_get_related_products', function () {
 add_action( 'wp_ajax_ckg_export_json', function () {
     ckg_check_ajax();
     $data_raw = $_POST['form_data'] ?? '{}';
-    $data     = @json_decode( stripslashes( $data_raw ), true );
-    if ( ! is_array( $data ) ) wp_send_json_error( [ 'message' => 'Error al procesar datos.' ] );
+    $raw = stripslashes( $data_raw );
+    $data = json_decode( $raw, true );
+    if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $data ) ) {
+        if ( preg_match( '/(\{.*\}|\[.*\])/s', $raw, $m ) ) {
+            $data = json_decode( $m[0], true );
+            if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $data ) ) {
+                wp_send_json_error( [ 'message' => 'Error al procesar datos.' ] );
+            }
+        } else {
+            wp_send_json_error( [ 'message' => 'Error al procesar datos.' ] );
+        }
+    }
 
     $export = [
         '_ckg_export_version' => CKG_VERSION,
@@ -659,7 +676,18 @@ add_action( 'wp_ajax_ckg_create_web_story', function () {
 
     // Recoger datos adicionales del POST
     $data_raw = $_POST['product_data'] ?? '{}';
-    $data     = @json_decode( stripslashes( $data_raw ), true ) ?: [];
+    $raw = stripslashes( $data_raw );
+    $data = json_decode( $raw, true );
+    if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $data ) ) {
+        if ( preg_match( '/(\{.*\}|\[.*\])/s', $raw, $m ) ) {
+            $data = json_decode( $m[0], true );
+            if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $data ) ) {
+                $data = [];
+            }
+        } else {
+            $data = [];
+        }
+    }
 
     $result = CKG_Web_Story::create_for_product( $product_id, $data );
 
@@ -928,12 +956,20 @@ PROMPT;
 
     // Parsear JSON
     $clean   = trim( preg_replace( '/```json|```/', '', $result ) );
-    $decoded = @json_decode( $clean, true );
-
-    if ( ! is_array( $decoded ) ) {
-        // Intentar extraer strings entre comillas
-        preg_match_all( '/"((?:[^"\\]|\\.)*)"/s', $result, $m );
-        $decoded = $m[1] ?? [];
+    $raw = $clean;
+    $decoded = json_decode( $raw, true );
+    if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) ) {
+        if ( preg_match( '/(\[.*\]|\{.*\})/s', $raw, $m ) ) {
+            $decoded = json_decode( $m[0], true );
+            if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) ) {
+                // Intentar extraer strings entre comillas
+                preg_match_all( '/"((?:[^"\\]|\\.)*)"/s', $result, $m2 );
+                $decoded = $m2[1] ?? [];
+            }
+        } else {
+            preg_match_all( '/"((?:[^"\\]|\\.)*)"/s', $result, $m2 );
+            $decoded = $m2[1] ?? [];
+        }
     }
 
     $answers = array_map( 'sanitize_textarea_field', array_values( $decoded ) );
@@ -1021,7 +1057,18 @@ add_action( 'wp_ajax_ckg_competitive_seo', function () {
 
     $keyword  = sanitize_text_field( $_POST['keyword']   ?? '' );
     $data_raw = $_POST['form_data'] ?? '{}';
-    $data     = @json_decode( stripslashes( $data_raw ), true ) ?: [];
+    $raw = stripslashes( $data_raw );
+    $data = json_decode( $raw, true );
+    if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $data ) ) {
+        if ( preg_match( '/(\{.*\}|\[.*\])/s', $raw, $m ) ) {
+            $data = json_decode( $m[0], true );
+            if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $data ) ) {
+                $data = [];
+            }
+        } else {
+            $data = [];
+        }
+    }
 
     if ( empty( $keyword ) ) {
         wp_send_json_error( [ 'message' => 'Introduce la keyword en la pestaña SEO primero.' ] );
@@ -1651,10 +1698,17 @@ add_action( 'wp_ajax_ckg_store_autofill', function () {
     ckg_check_ajax();
 
     $data_raw = $_POST['data'] ?? '';
-    $data     = @json_decode( stripslashes( $data_raw ), true );
-
-    if ( ! is_array( $data ) || empty( $data ) ) {
-        wp_send_json_error( [ 'message' => 'Datos no válidos.' ] );
+    $raw = stripslashes( $data_raw );
+    $data = json_decode( $raw, true );
+    if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $data ) || empty( $data ) ) {
+        if ( preg_match( '/(\{.*\}|\[.*\])/s', $raw, $m ) ) {
+            $data = json_decode( $m[0], true );
+            if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $data ) || empty( $data ) ) {
+                wp_send_json_error( [ 'message' => 'Datos no válidos.' ] );
+            }
+        } else {
+            wp_send_json_error( [ 'message' => 'Datos no válidos.' ] );
+        }
     }
 
     $user_id   = get_current_user_id();
@@ -2111,7 +2165,19 @@ add_action( 'wp_ajax_ckg_enricher_analyze', function () {
 
 add_action( 'wp_ajax_ckg_enricher_start', function () {
     ckg_check_ajax();
-    $ids = array_map( 'absint', (array) json_decode( stripslashes( $_POST['ids'] ?? '[]' ), true ) );
+    $ids_raw = stripslashes( $_POST['ids'] ?? '[]' );
+    $ids_dec = json_decode( $ids_raw, true );
+    if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $ids_dec ) ) {
+        if ( preg_match( '/(\[.*\]|\{.*\})/s', $ids_raw, $m ) ) {
+            $ids_dec = json_decode( $m[0], true );
+            if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $ids_dec ) ) {
+                $ids_dec = [];
+            }
+        } else {
+            $ids_dec = [];
+        }
+    }
+    $ids = array_map( 'absint', (array) $ids_dec );
     $ids = array_filter( $ids ); // eliminar ceros
     if ( empty( $ids ) ) wp_send_json_error( [ 'message' => 'Sin productos seleccionados.' ] );
 
