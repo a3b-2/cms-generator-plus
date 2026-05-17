@@ -129,9 +129,17 @@ class CKG_Competitive_SEO {
         $text = preg_replace( '/```json|```/', '', $text );
         $text = trim( $text );
 
-        $data = @json_decode( $text, true );
-        if ( ! is_array( $data ) || empty( $data ) ) {
-            return new WP_Error( 'parse_err', 'Perplexity no devolvio JSON valido.' );
+        $data = json_decode( $text, true );
+        if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $data ) || empty( $data ) ) {
+            // intentar extraer JSON embebido en la respuesta
+            if ( preg_match( '/(\[.*\]|\{.*\})/s', $text, $m ) ) {
+                $data = json_decode( $m[0], true );
+                if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $data ) || empty( $data ) ) {
+                    return new WP_Error( 'parse_err', 'Perplexity no devolvio JSON valido.' );
+                }
+            } else {
+                return new WP_Error( 'parse_err', 'Perplexity no devolvio JSON valido.' );
+            }
         }
 
         // Normalizar y validar cada resultado
