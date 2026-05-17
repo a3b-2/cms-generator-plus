@@ -69,6 +69,7 @@ class CKG_Batch_Enricher {
         $ids = wc_get_products( $args );
 
         // Filtrar por score SEO si se especifica un máximo
+        $max_score = isset( $filters['max_score'] ) ? (int) $filters['max_score'] : 100;
         if ( $max_score < 100 && ! empty( $ids ) ) {
             $ids = array_filter( $ids, function( $id ) use ( $max_score ) {
                 $score = (int) get_post_meta( $id, '_ckg_seo_score', true );

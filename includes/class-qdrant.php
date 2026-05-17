@@ -50,7 +50,13 @@ class CKG_Qdrant {
     }
 
     public static function ollama_endpoint(): string {
-        return CKG_Ollama::get_endpoint();
+        // Use the public resolved endpoint from CKG_Ollama if available.
+        if ( class_exists( 'CKG_Ollama' ) && method_exists( 'CKG_Ollama', 'get_resolved_endpoint' ) ) {
+            return CKG_Ollama::get_resolved_endpoint();
+        }
+        // Fallback to plugin settings
+        $s = get_option( 'ckg_settings', [] );
+        return rtrim( $s['ollama_endpoint'] ?? 'http://localhost:11434', '/' );
     }
 
     public static function knowledge_collection(): string {
