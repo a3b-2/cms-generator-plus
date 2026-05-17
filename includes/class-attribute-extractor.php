@@ -316,8 +316,18 @@ class CKG_Attribute_Extractor {
     private static function parse_json_ld( string $html, array &$attrs ): void {
         preg_match_all( '/<script[^>]*type=["\']application\/ld\+json["\'][^>]*>(.*?)<\/script>/si', $html, $matches );
         foreach ( $matches[1] as $json_str ) {
-            $data = @json_decode( trim( $json_str ), true );
-            if ( ! is_array( $data ) ) continue;
+            $raw = trim( $json_str );
+            $data = json_decode( $raw, true );
+            if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $data ) ) {
+                if ( preg_match( '/(\{.*\}|\[.*\])/s', $raw, $m ) ) {
+                    $data = json_decode( $m[0], true );
+                    if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $data ) ) {
+                        continue;
+                    }
+                } else {
+                    continue;
+                }
+            }
 
             // Aplanar @graph
             $items = isset( $data['@graph'] ) ? $data['@graph'] : [ $data ];
