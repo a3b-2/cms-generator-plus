@@ -275,11 +275,23 @@ PROMPT;
         // Parsear JSON
         $clean = preg_replace( '/```json|```/', '', $result );
         $clean = trim( $clean );
-        $decoded = @json_decode( $clean, true );
+        $decoded = json_decode( $clean, true );
+
+        if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) ) {
+            // Intentar extraer JSON embebido
+            if ( preg_match( '/(\[.*\]|\{.*\})/s', $clean, $m ) ) {
+                $decoded = json_decode( $m[0], true );
+                if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) ) {
+                    $decoded = null;
+                }
+            } else {
+                $decoded = null;
+            }
+        }
 
         if ( ! is_array( $decoded ) ) {
-            // Intentar extraer con regex
-            preg_match_all( '/"([^"]+)"/', $result, $m );
+            // Intentar extraer con regex simple de strings
+            preg_match_all( '/"([^\"]+)"/', $result, $m );
             $decoded = $m[1] ?? [];
         }
 
