@@ -186,7 +186,18 @@ class CKG_Enrichment_Queue {
         $faq = [];
         if ( ! is_wp_error( $faq_result ) && ! empty( $faq_result['text'] ) ) {
             $clean = preg_replace( '/```json|```/', '', $faq_result['text'] );
-            $decoded = @json_decode( trim($clean), true );
+            $raw = trim( $clean );
+            $decoded = json_decode( $raw, true );
+            if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) ) {
+                if ( preg_match( '/(\{.*\}|\[.*\])/s', $raw, $m ) ) {
+                    $decoded = json_decode( $m[0], true );
+                    if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) ) {
+                        $decoded = null;
+                    }
+                } else {
+                    $decoded = null;
+                }
+            }
             if ( is_array( $decoded ) ) $faq = $decoded;
         }
 
