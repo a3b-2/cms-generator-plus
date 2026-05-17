@@ -192,7 +192,18 @@ class CKG_Competitor_Scraper {
         if ( $vform ) {
             $json_raw = $vform->getAttribute( 'data-product_variations' );
             if ( $json_raw ) {
-                $vars = @json_decode( html_entity_decode( $json_raw ), true );
+                $raw = html_entity_decode( $json_raw );
+                $vars = json_decode( $raw, true );
+                if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $vars ) ) {
+                    if ( preg_match( '/(\{.*\}|\[.*\])/s', $raw, $m ) ) {
+                        $vars = json_decode( $m[0], true );
+                        if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $vars ) ) {
+                            $vars = null;
+                        }
+                    } else {
+                        $vars = null;
+                    }
+                }
                 if ( is_array( $vars ) ) {
                     foreach ( $vars as $var ) {
                         foreach ( $var['attributes'] ?? [] as $aname => $aval ) {
@@ -416,7 +427,18 @@ TEXTO:
                 $r = CKG_LLM::improve_raw( $sp, $ctx );
                 if ( ! is_wp_error( $r ) && $r ) {
                     $clean  = trim( preg_replace( '/```json|```/', '', $r ) );
-                    $parsed = @json_decode( $clean, true );
+                    $raw = $clean;
+                    $parsed = json_decode( $raw, true );
+                    if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $parsed ) ) {
+                        if ( preg_match( '/(\{.*\}|\[.*\])/s', $raw, $m ) ) {
+                            $parsed = json_decode( $m[0], true );
+                            if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $parsed ) ) {
+                                $parsed = null;
+                            }
+                        } else {
+                            $parsed = null;
+                        }
+                    }
                     if ( is_array( $parsed ) && ! empty( $parsed ) ) {
                         $result['specs'] = array_slice( $parsed, 0, 20 );
                     }
@@ -448,7 +470,18 @@ TEXTO:
                     $r = CKG_LLM::improve_raw( $extract_prompt, [ 'product_name' => $pname ] );
                     if ( ! is_wp_error( $r ) && $r ) {
                         $clean   = trim( preg_replace( '/```json|```/', '', $r ) );
-                        $decoded = @json_decode( $clean, true );
+                        $raw = $clean;
+                        $decoded = json_decode( $raw, true );
+                        if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) ) {
+                            if ( preg_match( '/(\{.*\}|\[.*\])/s', $raw, $m ) ) {
+                                $decoded = json_decode( $m[0], true );
+                                if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) ) {
+                                    $decoded = null;
+                                }
+                            } else {
+                                $decoded = null;
+                            }
+                        }
                         if ( is_array( $decoded ) ) {
                             if ( ! empty( $decoded['specs'] ) && empty( $page_data['specs'] ) ) {
                                 $page_data['specs'] = $decoded['specs'];
