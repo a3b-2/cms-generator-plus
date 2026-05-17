@@ -2620,10 +2620,17 @@ add_action( 'wp_ajax_ckg_parse_specs_text', function () {
     }
 
     $clean   = trim( preg_replace( '/```json|```/', '', $response ) );
-    $decoded = @json_decode( $clean, true );
-
-    if ( ! is_array( $decoded ) || empty( $decoded ) ) {
-        wp_send_json_error( [ 'message' => 'La IA no devolvio JSON valido. Usa el modo manual.' ] );
+    $raw = $clean;
+    $decoded = json_decode( $raw, true );
+    if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) || empty( $decoded ) ) {
+        if ( preg_match( '/(\[.*\]|\{.*\})/s', $raw, $m ) ) {
+            $decoded = json_decode( $m[0], true );
+            if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) || empty( $decoded ) ) {
+                wp_send_json_error( [ 'message' => 'La IA no devolvio JSON valido. Usa el modo manual.' ] );
+            }
+        } else {
+            wp_send_json_error( [ 'message' => 'La IA no devolvio JSON valido. Usa el modo manual.' ] );
+        }
     }
 
     $specs_clean = [];
