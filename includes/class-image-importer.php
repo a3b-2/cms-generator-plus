@@ -150,9 +150,20 @@ class CKG_Image_Importer {
 
         // ── Estrategia 4: JSON-LD (schema Product images) ─────────────
         foreach ( $xpath->query( '//script[@type="application/ld+json"]' ) as $script ) {
-            $json = @json_decode( $script->textContent, true );
-            if ( $json && isset( $json['image'] ) ) {
-                $imgs = is_array( $json['image'] ) ? $json['image'] : [ $json['image'] ];
+            $raw = trim( $script->textContent );
+            $decoded = json_decode( $raw, true );
+            if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) ) {
+                if ( preg_match( '/(\{.*\}|\[.*\])/s', $raw, $m ) ) {
+                    $decoded = json_decode( $m[0], true );
+                    if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) ) {
+                        $decoded = null;
+                    }
+                } else {
+                    $decoded = null;
+                }
+            }
+            if ( is_array( $decoded ) && isset( $decoded['image'] ) ) {
+                $imgs = is_array( $decoded['image'] ) ? $decoded['image'] : [ $decoded['image'] ];
                 foreach ( $imgs as $img ) {
                     if ( is_string( $img ) && filter_var( $img, FILTER_VALIDATE_URL ) ) $found[] = $img;
                     if ( is_array( $img ) && ! empty( $img['url'] ) ) $found[] = $img['url'];
