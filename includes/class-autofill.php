@@ -279,9 +279,20 @@ class CKG_AutoFill {
 
         // JSON-LD imágenes
         foreach ( $xpath->query('//script[@type="application/ld+json"]') as $script ) {
-            $json = @json_decode( $script->textContent, true );
-            if ( $json && isset($json['image']) ) {
-                $imgs = is_array($json['image']) ? $json['image'] : [$json['image']];
+            $raw = trim( $script->textContent );
+            $decoded = json_decode( $raw, true );
+            if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) ) {
+                if ( preg_match( '/(\{.*\}|\[.*\])/s', $raw, $m ) ) {
+                    $decoded = json_decode( $m[0], true );
+                    if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) ) {
+                        $decoded = null;
+                    }
+                } else {
+                    $decoded = null;
+                }
+            }
+            if ( is_array( $decoded ) && isset( $decoded['image'] ) ) {
+                $imgs = is_array($decoded['image']) ? $decoded['image'] : [$decoded['image']];
                 foreach ($imgs as $img) {
                     if (is_string($img) && filter_var($img, FILTER_VALIDATE_URL)) $img_urls[] = $img;
                     if (is_array($img) && !empty($img['url'])) $img_urls[] = $img['url'];
@@ -452,7 +463,18 @@ class CKG_AutoFill {
 
                 if ( ! is_wp_error($result) ) {
                     $clean   = trim( preg_replace('/```json|```/', '', $result) );
-                    $decoded = @json_decode( $clean, true );
+                    $raw = $clean;
+                    $decoded = json_decode( $raw, true );
+                    if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) ) {
+                        if ( preg_match( '/(\{.*\}|\[.*\])/s', $raw, $m ) ) {
+                            $decoded = json_decode( $m[0], true );
+                            if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) ) {
+                                $decoded = null;
+                            }
+                        } else {
+                            $decoded = null;
+                        }
+                    }
                     if ( is_array($decoded) ) {
                         $answers = array_column($decoded, 'respuesta');
                         $idx     = 0;
