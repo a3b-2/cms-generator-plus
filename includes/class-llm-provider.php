@@ -550,20 +550,25 @@ PROMPT,
         // Parsear JSON
         $clean   = preg_replace( '/```json|```/', '', $text );
         $clean   = trim( $clean );
-        $decoded = @json_decode( $clean, true );
 
-        if ( ! is_array( $decoded ) ) {
-            // Intentar extraer JSON del texto
-            if ( preg_match( '/\{.*\}/s', $clean, $m ) ) {
-                $decoded = @json_decode( $m[0], true );
+        $decoded = json_decode( $clean, true );
+        if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) ) {
+            // Intentar extraer JSON del texto (objeto o array)
+            if ( preg_match( '/(\{.*\}|\[.*\])/s', $clean, $m ) ) {
+                $decoded = json_decode( $m[0], true );
+                if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) ) {
+                    $decoded = null;
+                }
+            } else {
+                $decoded = null;
             }
         }
 
         if ( ! is_array( $decoded ) ) {
             // Devolver como texto crudo si no se puede parsear
             return [
-                '_raw'    => $text,
-                '_parsed' => false,
+                '_raw'      => $text,
+                '_parsed'   => false,
                 'citations' => $body['citations'] ?? [],
             ];
         }
@@ -619,7 +624,17 @@ PROMPT,
 
         $text    = trim( $body['choices'][0]['message']['content'] ?? '' );
         $clean   = trim( preg_replace( '/```json|```/', '', $text ) );
-        $decoded = @json_decode( $clean, true );
+        $decoded = json_decode( $clean, true );
+        if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) ) {
+            if ( preg_match( '/(\{.*\}|\[.*\])/s', $clean, $m ) ) {
+                $decoded = json_decode( $m[0], true );
+                if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) ) {
+                    $decoded = null;
+                }
+            } else {
+                $decoded = null;
+            }
+        }
 
         return is_array( $decoded ) ? $decoded : [ 'vigente' => null, 'nota' => $text ];
     }

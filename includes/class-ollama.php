@@ -168,12 +168,17 @@ class CKG_Ollama {
         if ( $code !== 200 ) {
             $body_raw = wp_remote_retrieve_body( $response );
             $decoded  = json_decode( $body_raw, true );
-            $msg      = $decoded['error'] ?? "HTTP $code";
+            if ( is_array( $decoded ) ) {
+                $msg = $decoded['error'] ?? "HTTP $code";
+            } else {
+                $msg = ! empty( $body_raw ) ? $body_raw : "HTTP $code";
+            }
             return new WP_Error( 'ollama_http', "Ollama respondió con error: $msg" );
         }
 
-        $body = json_decode( wp_remote_retrieve_body( $response ), true );
-        $text = trim( $body['response'] ?? '' );
+        $body_raw = wp_remote_retrieve_body( $response );
+        $body = json_decode( $body_raw, true );
+        $text = trim( is_array( $body ) ? ( $body['response'] ?? '' ) : $body_raw );
 
         if ( empty( $text ) ) {
             return new WP_Error( 'empty_response', 'Ollama devolvió una respuesta vacía. Prueba con otro modelo.' );
@@ -208,8 +213,9 @@ class CKG_Ollama {
         ] );
 
         if ( is_wp_error( $response ) ) return $response;
-        $body = json_decode( wp_remote_retrieve_body( $response ), true );
-        $text = trim( $body['response'] ?? '' );
+        $body_raw = wp_remote_retrieve_body( $response );
+        $body = json_decode( $body_raw, true );
+        $text = trim( is_array( $body ) ? ( $body['response'] ?? '' ) : $body_raw );
         return $text ?: new WP_Error( 'empty', 'Ollama devolvió respuesta vacía.' );
     }
 
@@ -233,7 +239,9 @@ class CKG_Ollama {
     public static function list_models(): array {
         $response = wp_remote_get( self::endpoint() . '/api/tags', [ 'timeout' => 8 ] );
         if ( is_wp_error( $response ) ) return [];
-        $body = json_decode( wp_remote_retrieve_body( $response ), true );
+        $body_raw = wp_remote_retrieve_body( $response );
+        $body = json_decode( $body_raw, true );
+        if ( ! is_array( $body ) ) return [];
         return array_column( $body['models'] ?? [], 'name' );
     }
 
