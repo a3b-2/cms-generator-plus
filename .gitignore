@@ -1,0 +1,9 @@
+# WordPress
+*.log
+.DS_Store
+Thumbs.db
+
+# Desarrollo
+node_modules/
+*.zip
+*.tar.gz
