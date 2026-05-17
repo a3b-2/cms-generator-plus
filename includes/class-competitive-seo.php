@@ -407,9 +407,20 @@ class CKG_Competitive_SEO {
         // Schema.org
         $schema_types = [];
         foreach ( $xpath->query( '//script[@type="application/ld+json"]' ) as $script ) {
-            $json = @json_decode( $script->textContent, true );
-            if ( $json ) {
-                $type = $json['@type'] ?? ( $json[0]['@type'] ?? '' );
+            $raw = trim( $script->textContent );
+            $decoded = json_decode( $raw, true );
+            if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) ) {
+                if ( preg_match( '/(\{.*\}|\[.*\])/s', $raw, $m ) ) {
+                    $decoded = json_decode( $m[0], true );
+                    if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) ) {
+                        $decoded = null;
+                    }
+                } else {
+                    $decoded = null;
+                }
+            }
+            if ( is_array( $decoded ) ) {
+                $type = $decoded['@type'] ?? ( $decoded[0]['@type'] ?? '' );
                 if ( $type ) $schema_types[] = $type;
             }
         }
