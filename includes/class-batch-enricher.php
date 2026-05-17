@@ -750,13 +750,13 @@ class CKG_Batch_Enricher {
         $response = trim( $response );
 
         // Intentar decodificar directamente
-        $data = @json_decode( $response, true );
-        if ( is_array( $data ) ) return $data;
+        $data = json_decode( $response, true );
+        if ( json_last_error() === JSON_ERROR_NONE && is_array( $data ) ) return $data;
 
         // Intentar extraer el JSON del texto
-        if ( preg_match( '/\{.*\}/s', $response, $m ) ) {
-            $data = @json_decode( $m[0], true );
-            if ( is_array( $data ) ) return $data;
+        if ( preg_match( '/(\{.*\}|\[.*\])/s', $response, $m ) ) {
+            $data = json_decode( $m[0], true );
+            if ( json_last_error() === JSON_ERROR_NONE && is_array( $data ) ) return $data;
         }
 
         return [];
