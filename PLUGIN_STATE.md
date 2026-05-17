@@ -51,6 +51,11 @@ C:\CMSKart\
     - `includes/class-ollama.php`: validación robusta de `wp_remote_*` responses; evita indexar resultados de `json_decode()` cuando falla y devuelve mensajes de error más claros.
     - Commit: "Hardening: robust JSON parsing for Ollama and LLM provider; remove @json_decode usage". Rama: `fix-audit-errors`.
 
+- Entorno local: comprobación de PHP
+    - 2026-05-17: Instalado PHP 8.5.6 vía Scoop en el entorno de desarrollo local (`%USERPROFILE%\scoop\apps\php\current`).
+    - Se ejecutó `php -l` sobre todos los archivos de `includes/` sin errores de sintaxis reportados.
+    - Esto permite validar cambios adicionales con `php -l` antes de commitear.
+
 Se irá actualizando este documento a medida que se apliquen más correcciones.
 
 ## ESTRUCTURA DEL PLUGIN
